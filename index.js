@@ -52,12 +52,12 @@ app.get('/', (request, response) => {
  */
 app.post('/data', (request, response) => {
     console.log("/data POST: ", request.body);
-    firebase.database().ref('json_data/').set(request.body)
+    
+    // Store into firebase as plain text
+    firebase.database().ref('data/').set(request.body)
         
     // Report OK status
     response.sendStatus(200);
-    
-    
 })
 
 /* Endpoint 2: Retrieve data
@@ -71,11 +71,12 @@ app.post('/data', (request, response) => {
  */
 app.get('/data', (request, response) => {
     // Get a snapshot of the database, and return the JSON last set there
-    var data = firebase.database().ref('json_data/').once("value").then(function(snapshot) {
-        var json_data = snapshot.val();
-        console.log("/data GET: ", json_data);
+    firebase.database().ref('data/').once("value").then(function(snapshot) {
+        var data = snapshot.val();
+        console.log("/data GET: ", data);
         
-        response.send(json_data)
+        // Return the stored data
+        response.send(data)
     });
 })
 
