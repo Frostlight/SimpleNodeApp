@@ -24,15 +24,17 @@ var database = firebase.database(); // Get a reference to the database service
 
 // Raw body middleware for requests
 app.use(function(req, res, next){
-   var data = "";
-   req.on('data', function(chunk){ data += chunk})
-   req.on('end', function(){
-      req.rawBody = data;
-      next();
-   })
+    var data = "";
+    req.on('data', function(chunk){ 
+        data += chunk
+    });
+    
+    // request.body contains the raw body of the input
+    req.on('end', function(){
+        req.body = data;
+        next();
+    })
 })
-
-
 
 /* Endpoint 0: Root
  *  Hello world!
@@ -52,35 +54,12 @@ app.get('/', (request, response) => {
  *      Returns: HTTP 200 status code
  */
 app.post('/data', (request, response) => {
-    console.log(request.rawBody);
-    try {
-        // Retrieve JSON body from the request
-        var body = JSON.stringify(request.body);
+    console.log("/data POST: ", request.body);
+    firebase.database().ref('json_data/').set(request.rawBody)
         
-        // Invalid characters are ".", "#", "$", "/", "[", or "]"
-        // Replace those with corresponding (modified) HTML codes
-        // Leave out "[" and "]" since they are used to make lists
-        body = body.split('.').join('&46;');
-        body = body.split('#').join('&35;');
-        body = body.split('$').join('&36;');
-        body = body.split('/').join('&47;');
-        
-        // Handle the null character too
-        body = body.split("null").join('\"&00;\"');
-        
-        console.log("POST /data, body: ", body);
-        
-        firebase.database().ref('json_data/').set(JSON.parse(body));
-            
-        // Report OK status
-        response.sendStatus(200);
-    } catch (err) {
-        // Not JSON
-        firebase.database().ref('json_data/').set(request.body)
-        
-        // Report OK status
-        response.sendStatus(200);
-    }
+    // Report OK status
+    response.sendStatus(200);
+    
     
 })
 
@@ -96,19 +75,8 @@ app.post('/data', (request, response) => {
 app.get('/data', (request, response) => {
     // Get a snapshot of the database, and return the JSON last set there
     var data = firebase.database().ref('json_data/').once("value").then(function(snapshot) {
-        var json_data = JSON.stringify(snapshot.val());
-        
-        // Invalid characters are ".", "#", "$", "/", "[", or "]"
-        // Undo the invalid character replacements
-        json_data = json_data.split('&46;').join('.');
-        json_data = json_data.split('&35;').join('#');
-        json_data = json_data.split('&36;').join('$');
-        json_data = json_data.split('&47;').join('/');
-        
-        // Reverse the null substitution
-        json_data = json_data.split("\"&00;\"").join('null');
-        
-        console.log("JSON data: ", json_data);
+        var json_data = snapshot.val();
+        console.log("/data GET: ", json_data);
         
         response.send(json_data)
     });
@@ -140,11 +108,11 @@ app.get('/weather', (request, response) => {
     var query_city = request.query.city;
     
     // Check if city is in the "valid cities" list
-    if(["Toronto", "New York", "Tokyo"].indexOf(query_city) == -1) {
-        console.log("GET /weather, INVALID city: ", query_city);
+    if(["toronto", "new york", "tokyo"].indexOf(query_city) == -1) {
+        console.log("/weather GET, INVALID city: ", query_city);
         response.sendStatus(400);
     } else {
-        console.log("GET /weather, city: ", query_city);
+        console.log("/weather GET, city: ", query_city);
     
     // query = city
     // units = metric
@@ -171,10 +139,6 @@ app.get('/weather', (request, response) => {
         res.resume();
     });
     }
-        
-    
-    
-    
 })
 
 // Listen
