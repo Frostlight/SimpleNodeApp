@@ -1,7 +1,4 @@
 var firebase = require("firebase");
-var bodyParser = require('body-parser');
-var json = require('json');
-var url = require('url');
 var http = require('http')
 const express = require('express');  
 const app = express();  
@@ -55,7 +52,7 @@ app.get('/', (request, response) => {
  */
 app.post('/data', (request, response) => {
     console.log("/data POST: ", request.body);
-    firebase.database().ref('json_data/').set(request.rawBody)
+    firebase.database().ref('json_data/').set(request.body)
         
     // Report OK status
     response.sendStatus(200);
@@ -122,7 +119,7 @@ app.get('/weather', (request, response) => {
         
     console.log("URL: ", url)
     http.get(url, (res) => {
-        console.log(`Got response: ${res.statusCode}`);
+        console.log(`Got response from openweathermap API: ${res.statusCode}`);
         
         res.on('data', function (chunk) {
             // Parse the return string as JSON
