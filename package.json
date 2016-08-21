@@ -1,0 +1,19 @@
+{
+  "name": "massively",
+  "version": "1.0.0",
+  "description": "A solution to the Massively NodeJS test",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js"
+  },
+  "author": "Vinh Hoang",
+  "license": "ISC",
+  "dependencies": {
+    "body": "^5.1.0",
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0",
+    "firebase": "^3.3.0",
+    "json": "^9.0.4"
+  }
+}
