@@ -5,6 +5,8 @@ const app = express();
 const port = 3000;
 
 // Massively testing URL for reference:
+// Replace xxxxxxxx.ngrok.io with instance of ngrok being used
+// Run ngrok from command prompt "ngrok.exe 8080", where 8080 is the port being used
 // https://api.massively.ai/hiring/test?domain=https://573280fc.ngrok.io&email=cloudy.sonata@gmail.com
 
 // Firebase configuration
@@ -20,6 +22,7 @@ firebase.initializeApp(config);
 var database = firebase.database(); // Get a reference to the database service
 
 // Raw body middleware for requests
+// Source: http://stackoverflow.com/questions/17644836/get-rawbody-in-express
 app.use(function(req, res, next){
     var data = "";
     req.on('data', function(chunk){ 
@@ -54,7 +57,7 @@ app.post('/data', (request, response) => {
     console.log("/data POST: ", request.body);
     
     // Store into firebase as plain text
-    firebase.database().ref('data/').set(request.body)
+    database.ref('data/').set(request.body)
         
     // Report OK status
     response.sendStatus(200);
@@ -71,7 +74,7 @@ app.post('/data', (request, response) => {
  */
 app.get('/data', (request, response) => {
     // Get a snapshot of the database, and return the JSON last set there
-    firebase.database().ref('data/').once("value").then(function(snapshot) {
+    database.ref('data/').once("value").then(function(snapshot) {
         var data = snapshot.val();
         console.log("/data GET: ", data);
         
@@ -100,7 +103,6 @@ app.get('/data', (request, response) => {
  *      Query Parameters: city (should be one of Toronto, New York, or Tokyo - case insensitive)
  *      Returns: application/json
  */
-
 app.get('/weather', (request, response) => {
     // Get the city from parsing query
     var query_city = request.query.city;
@@ -112,34 +114,35 @@ app.get('/weather', (request, response) => {
     } else {
         console.log("/weather GET, city: ", query_city);
     
-    // query = city
-    // units = metric
-    // APPID = API key
-    var url = 'http://api.openweathermap.org/data/2.5/weather?q=' 
-        + query_city + '&units=metric&APPID=21c61098ba0334a94abe1bdfb587b236'
-        
-    console.log("URL: ", url)
-    http.get(url, (res) => {
-        console.log(`Got response from openweathermap API: ${res.statusCode}`);
-        
-        res.on('data', function (chunk) {
-            // Parse the return string as JSON
-            json_weather = JSON.parse(chunk)
+        // query = city
+        // units = metric
+        // APPID = API key
+        var url = 'http://api.openweathermap.org/data/2.5/weather?q=' 
+            + query_city + '&units=metric&APPID=21c61098ba0334a94abe1bdfb587b236'
             
-            // Get the temperature from the JSON string
-            // Have to append "°C" since JSON response excludes units
-            // Format: {"temperature": 25.48°C"}
-            json_temperature = JSON.stringify({temperature: json_weather.main.temp + "°C"})
-            console.log('Body: ', json_temperature);
-            response.send(json_temperature)
+        console.log("URL: ", url)
+        http.get(url, (res) => {
+            console.log("Response from openweathermap API: ${res.statusCode}");
+            
+            res.on('data', function (chunk) {
+                // Parse the return string as JSON
+                json_weather = JSON.parse(chunk)
+                
+                // Get the temperature from the JSON string
+                // Have to append "°C" since JSON response excludes units
+                // Format: {"temperature": 25.48°C"}
+                json_temperature = JSON.stringify({temperature: json_weather.main.temp + "°C"})
+                console.log('Body: ', json_temperature);
+                response.send(json_temperature)
+            });
+            
+            res.resume();
         });
-        
-        res.resume();
-    });
     }
 })
 
-// Listen
+// "Hey, Listen!"
+// https://youtu.be/lCjyiEOZP44
 app.listen(port, (err) => {  
   if (err) {
     return console.log('Error:', err);
