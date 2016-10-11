@@ -1,15 +1,17 @@
-var firebase = require("firebase");
-var http = require('http')
+const firebase = require("firebase");
+const http = require('http');
 const express = require('express');  
 const app = express();  
 const port = 3000;
 
+// Use Postman Chrome App for testing endpoints 
 // Massively testing URL for reference:
 // Replace xxxxxxxx.ngrok.io with instance of ngrok being used
-// Run ngrok from command prompt "ngrok.exe 8080", where 8080 is the port being used
-// https://api.massively.ai/hiring/test?domain=https://573280fc.ngrok.io&email=cloudy.sonata@gmail.com
+// Run ngrok from command prompt "ngrok.exe http 8080", where 8080 is the port being used
+// https://api.massively.ai/hiring/test?domain=https://3d9a422c.ngrok.io&email=cloudy.sonata@gmail.com
 
 // Firebase configuration
+// Fine to leave here since firebase app has been deleted
 var config = {
     apiKey: "AIzaSyBYO54bS7oXnnQFoo0N-UxnZQA1PiZgR2w",
     authDomain: "massively-611b8.firebaseapp.com",
@@ -26,7 +28,7 @@ var database = firebase.database(); // Get a reference to the database service
 app.use(function(req, res, next){
     var data = "";
     req.on('data', function(chunk){ 
-        data += chunk
+        data += chunk;
     });
     
     // request.body contains the raw body of the input
@@ -54,10 +56,8 @@ app.get('/', (request, response) => {
  *      Returns: HTTP 200 status code
  */
 app.post('/data', (request, response) => {
-    console.log("/data POST: ", request.body);
-    
     // Store into firebase as plain text
-    database.ref('data/').set(request.body)
+    database.ref('data/').set(request.body);
         
     // Report OK status
     response.sendStatus(200);
@@ -79,7 +79,7 @@ app.get('/data', (request, response) => {
         console.log("/data GET: ", data);
         
         // Return the stored data
-        response.send(data)
+        response.send(data);
     });
 })
 
@@ -105,11 +105,14 @@ app.get('/data', (request, response) => {
  */
 app.get('/weather', (request, response) => {
     // Get the city from parsing query
+    // Should be 'undefined' if query parameter doesn't exist
     var query_city = request.query.city;
     
     // Check if city is in the "valid cities" list
+    // This catches 'undefined' city as well
     if(["toronto", "new york", "tokyo"].indexOf(query_city) == -1) {
-        console.log("/weather GET, INVALID city: ", query_city);
+        // Request parameter was for an invalid city
+        console.log("/weather GET, Invalid city: ", query_city);
         response.sendStatus(400);
     } else {
         console.log("/weather GET, city: ", query_city);
@@ -118,22 +121,23 @@ app.get('/weather', (request, response) => {
         // units = metric
         // APPID = API key
         var url = 'http://api.openweathermap.org/data/2.5/weather?q=' 
-            + query_city + '&units=metric&APPID=21c61098ba0334a94abe1bdfb587b236'
+            + query_city + '&units=metric&APPID=21c61098ba0334a94abe1bdfb587b236';
             
         console.log("URL: ", url)
         http.get(url, (res) => {
-            console.log("Response from openweathermap API: ${res.statusCode}");
+            console.log("Response from openweathermap API: " + res.statusCode);
             
             res.on('data', function (chunk) {
                 // Parse the return string as JSON
-                json_weather = JSON.parse(chunk)
+                json_weather = JSON.parse(chunk);
                 
                 // Get the temperature from the JSON string
-                // Have to append "°C" since JSON response excludes units
-                // Format: {"temperature": 25.48°C"}
-                json_temperature = JSON.stringify({temperature: json_weather.main.temp + "°C"})
+                // openweathermap returns temperature with decimal points, which should be removed
+                // Also have to append "°C" since JSON response excludes units
+                // Format: {"temperature": 25°C"}
+                json_temperature = JSON.stringify({temperature: Math.round(json_weather.main.temp) + "°C"});
                 console.log('Body: ', json_temperature);
-                response.send(json_temperature)
+                response.send(json_temperature);
             });
             
             res.resume();
@@ -142,12 +146,10 @@ app.get('/weather', (request, response) => {
 })
 
 // "Hey, Listen!"
-// https://youtu.be/lCjyiEOZP44
 app.listen(port, (err) => {  
-  if (err) {
-    return console.log('Error:', err);
-  }
-  
-  
-  console.log(`Server listening on ${port}`);
+    if (err) {
+        return console.log('Error:', err);
+    }
+      
+    console.log(`Server listening on ${port}`);
 })
